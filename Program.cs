@@ -15,7 +15,7 @@ namespace LeetCode
 
             var x = Solution.AddTwoNumbers(l1, l2);
 
-            //Console.WriteLine(x.ToString());
+            Console.WriteLine(x.ToString());
         }
 
     }

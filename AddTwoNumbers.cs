@@ -54,26 +54,26 @@ namespace LeetCode
 
     public class ListNode
     {
-        public int Val;
-        public ListNode Next;
+        public int val;
+        public ListNode next;
         private ListNode P;
 
         public ListNode(int x)
         {
-            Val = x;
+            val = x;
         }
         public ListNode(int[] xs)
         {
             P = new ListNode(0);
-            var xx = new int[xs.Length-1];
-            Val = xs[1];
-            Next = P;
+            val = xs[0];
+            next = P;
+            var xx = new int[xs.Length - 1];
             Array.Copy(xs,1,xx,0,xx.Length);
-            foreach (var i in xs)
+            foreach (var i in xx)
             {
-                P.Val = i;
-                P.Next = new ListNode(0);
-                P = P.Next;
+                P.val = i;
+                P.next = new ListNode(0);
+                P = P.next;
             }
         }
     }
@@ -85,35 +85,39 @@ namespace LeetCode
             var result = new ListNode(0);
             var p = result;
             var node = 0;
-            while (l1.Next != null && l2.Next != null)
+            while (l1 != null && l2 != null)
             {
-                node = l1.Val + l2.Val + node;
-                result.Val = node > 9 ? node % 10 : node;
-                result = result.Next;
+                node = l1.val + l2.val + node;
+                p.next = new ListNode(node > 9 ? node % 10 : node);
+                p = p.next;
                 node /= 10;
+                l1 = l1.next;
+                l2 = l2.next;
             }
 
-            while (l1.Next != null)
+            while (l1 != null)
             {
-                node = l1.Val + node;
-                result.Val = node > 9 ? node % 10 : node;
-                result = result.Next;
+                node = l1.val + node;
+                p.next = new ListNode(node > 9 ? node % 10 : node);
+                p = p.next;
                 node /= 10;
+                l1 = l1.next;
             }
 
-            while (l2.Next != null)
+            while (l2 != null)
             {
-                node = l2.Val + node;
-                result.Val = node > 9 ? node % 10 : node;
-                result = result.Next;
+                node = l2.val + node;
+                p.next = new ListNode(node > 9 ? node % 10 : node);
+                p = p.next;
                 node /= 10;
+                l2 = l2.next;
             }
 
             if (node != 0)
             {
-                result.Val = node;
+                p.next = new ListNode(node);
             }
-            return p;
+            return result;
         }
     }
 }
