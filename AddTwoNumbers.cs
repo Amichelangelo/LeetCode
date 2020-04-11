@@ -83,39 +83,16 @@ namespace LeetCode
         public static ListNode AddTwoNumbers(ListNode l1, ListNode l2)
         {
             var result = new ListNode(0);
-            var p = result;
-            var node = 0;
-            while (l1 != null && l2 != null)
+            var current = result;
+            var val = 0;
+            while (l1 != null || l2 != null || val!=0)
             {
-                node = l1.val + l2.val + node;
-                p.next = new ListNode(node > 9 ? node % 10 : node);
-                p = p.next;
-                node /= 10;
-                l1 = l1.next;
-                l2 = l2.next;
-            }
-
-            while (l1 != null)
-            {
-                node = l1.val + node;
-                p.next = new ListNode(node > 9 ? node % 10 : node);
-                p = p.next;
-                node /= 10;
-                l1 = l1.next;
-            }
-
-            while (l2 != null)
-            {
-                node = l2.val + node;
-                p.next = new ListNode(node > 9 ? node % 10 : node);
-                p = p.next;
-                node /= 10;
-                l2 = l2.next;
-            }
-
-            if (node != 0)
-            {
-                p.next = new ListNode(node);
+                val =l1?.val??0 + (l2?.val??0) + val;
+                current.next = new ListNode(val > 9 ? val % 10 : val);
+                current = current.next;
+                val /= 10;
+                l1 = l1?.next;
+                l2 = l2?.next;
             }
             return result;
         }
