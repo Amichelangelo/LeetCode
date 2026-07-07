@@ -42,5 +42,6 @@
 
 ## 部署
 
-`.github/workflows/deploy-pages.yml` 会在 `seoul-sg-rebate/` 有改动时把该目录发布到
-GitHub Pages（首次运行自动开启 Pages，无需手动设置）。
+`.github/workflows/deploy-pages.yml` 会在 `seoul-sg-rebate/` 有改动时，把该目录内容
+发布到 `gh-pages` 分支；GitHub 检测到 `gh-pages` 分支后自动开启 Pages，站点地址：
+<https://amichelangelo.github.io/LeetCode/>。
