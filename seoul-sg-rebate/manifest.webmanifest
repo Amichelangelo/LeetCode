@@ -3,6 +3,7 @@
   "short_name": "SG返点",
   "description": "首尔SG模式免税店返点实时对比查询工具",
   "lang": "zh-CN",
+  "id": "./",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

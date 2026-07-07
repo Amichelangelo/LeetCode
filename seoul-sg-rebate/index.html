@@ -3,13 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#2563eb">
+<meta name="theme-color" content="#2563eb" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b1220" media="(prefers-color-scheme: dark)">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="SG返点">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <title>首尔 SG 返点查询 | Seoul SG Rebate</title>
 <style>
   :root{
@@ -253,7 +255,7 @@
   <div class="searchbar" id="searchbar">
     <div class="box">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-      <input id="searchInput" type="search" placeholder="搜索品牌（中文或英文）… e.g. 香奈儿 / Chanel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+      <input id="searchInput" type="search" aria-label="搜索品牌" placeholder="搜索品牌（中文或英文）… e.g. 香奈儿 / Chanel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
       <button class="clear" id="clearBtn" aria-label="清除">✕</button>
     </div>
   </div>
@@ -759,9 +761,20 @@ document.getElementById('resetBtn').addEventListener('click',()=>{
 });
 
 /* ---------- PWA ---------- */
-if('serviceWorker' in navigator && location.protocol==='https:'){
+const SW_OK = 'serviceWorker' in navigator &&
+  (location.protocol==='https:' || ['localhost','127.0.0.1'].includes(location.hostname));
+if(SW_OK){
   window.addEventListener('load',()=>{
-    navigator.serviceWorker.register('sw.js').catch(()=>{/* offline support unavailable */});
+    navigator.serviceWorker.register('sw.js').then(reg=>{
+      reg.addEventListener('updatefound',()=>{
+        const nw = reg.installing;
+        nw && nw.addEventListener('statechange',()=>{
+          if(nw.state==='installed' && navigator.serviceWorker.controller){
+            toast('应用已更新，下次打开生效');
+          }
+        });
+      });
+    }).catch(()=>{/* offline support unavailable */});
   });
 }
 

@@ -1,7 +1,7 @@
 /* Seoul SG Rebate Tool — service worker
    core assets pre-cached for offline use; data/index fetched
    network-first so updates land as soon as they're deployed. */
-const CACHE = 'sg-rebate-v2';
+const CACHE = 'sg-rebate-v3';
 const CORE = [
   './',
   './index.html',
@@ -9,6 +9,7 @@ const CORE = [
   './manifest.webmanifest',
   './icon-192.png',
   './icon-512.png',
+  './apple-touch-icon.png',
 ];
 
 self.addEventListener('install', e => {
