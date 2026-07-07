@@ -3,7 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#0f172a">
+<meta name="theme-color" content="#2563eb">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="SG返点">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
 <title>首尔 SG 返点查询 | Seoul SG Rebate</title>
 <style>
   :root{
@@ -12,6 +18,7 @@
     --good:#047857; --good-bg:#d1fae5;
     --zero:#b91c1c; --zero-bg:#fee2e2;
     --none:#64748b; --none-bg:#f1f5f9;
+    --ask:#b45309; --ask-bg:#fef3c7;
     --warn-bg:#fef3c7; --warn-ink:#92400e; --warn-line:#fcd34d;
     --radius:14px; --shadow:0 1px 3px rgba(15,23,42,.08),0 4px 14px rgba(15,23,42,.05);
   }
@@ -22,6 +29,7 @@
       --good:#34d399; --good-bg:#0b3b2e;
       --zero:#f87171; --zero-bg:#4a1414;
       --none:#94a3b8; --none-bg:#1e293b;
+      --ask:#fbbf24; --ask-bg:#3a2e0e;
       --warn-bg:#3a2e0e; --warn-ink:#fcd34d; --warn-line:#6b5416;
       --shadow:0 1px 3px rgba(0,0,0,.4);
     }
@@ -78,39 +86,69 @@
   .searchbar.has-text .clear{display:block}
 
   .meta-row{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--ink-3);padding:2px 4px 8px;flex-wrap:wrap;gap:4px}
-  .legend{display:flex;gap:10px;flex-wrap:wrap}
-  .legend span{display:inline-flex;align-items:center;gap:4px}
+  .legend{display:flex;gap:9px;flex-wrap:wrap}
+  .legend span{display:inline-flex;align-items:center;gap:3px}
   .dot{width:9px;height:9px;border-radius:3px;display:inline-block}
-  .dot.best{background:var(--good)} .dot.zero{background:var(--zero)} .dot.none{background:var(--ink-3)}
+  .dot.best{background:var(--good)} .dot.zero{background:var(--zero)}
+  .dot.none{background:var(--ink-3)} .dot.ask{background:var(--ask)}
+
+  /* ---- info panel (base rates & rules) ---- */
+  details.info{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:12px}
+  details.info summary{
+    padding:11px 14px;font-size:13.5px;font-weight:600;cursor:pointer;list-style:none;
+    display:flex;align-items:center;gap:8px;color:var(--ink-2);
+  }
+  details.info summary::-webkit-details-marker{display:none}
+  details.info summary .chev{margin-left:auto;transition:transform .2s;color:var(--ink-3)}
+  details.info[open] summary .chev{transform:rotate(180deg)}
+  .info-body{padding:0 14px 14px;font-size:12.5px;color:var(--ink-2)}
+  .info-body h3{font-size:12.5px;color:var(--ink);margin:12px 0 6px}
+  .info-body h3:first-child{margin-top:0}
+  .base-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:10px}
+  table.base{border-collapse:collapse;width:100%;min-width:560px;font-size:12px}
+  table.base th{background:var(--none-bg);color:var(--ink-2);font-weight:600;padding:7px 6px;white-space:nowrap}
+  table.base td{padding:6px;text-align:center;border-top:1px solid var(--line);white-space:nowrap}
+  table.base td:first-child{text-align:left;font-weight:600;color:var(--ink)}
+  .zero-list{list-style:none;display:flex;flex-direction:column;gap:6px}
+  .zero-list b{color:var(--zero)}
+  .rule-list{padding-left:18px}
 
   /* ---- table ---- */
   .table-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
   .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
-  table{border-collapse:separate;border-spacing:0;width:100%;min-width:640px}
-  thead th{
+  table.main{border-collapse:separate;border-spacing:0;width:100%;min-width:660px}
+  table.main thead th{
     position:sticky;top:0;z-index:10;background:var(--card);
     font-size:11.5px;color:var(--ink-2);font-weight:600;text-align:center;
     padding:10px 6px;border-bottom:1.5px solid var(--line);white-space:nowrap;
   }
-  thead th .en{display:block;font-size:9.5px;font-weight:400;color:var(--ink-3)}
+  table.main thead th .en{display:block;font-size:9.5px;font-weight:400;color:var(--ink-3)}
   th.brand-col, td.brand-col{
     position:sticky;left:0;z-index:11;background:var(--card);
-    text-align:left;padding-left:12px;min-width:118px;max-width:150px;
+    text-align:left;padding-left:12px;min-width:122px;max-width:158px;
     border-right:1px solid var(--line);
     box-shadow:2px 0 4px -2px rgba(15,23,42,.12);
   }
-  thead th.brand-col{z-index:12}
-  tbody td{padding:9px 5px;text-align:center;border-bottom:1px solid var(--line);font-size:13px;white-space:nowrap}
-  tbody tr:last-child td{border-bottom:none}
-  tbody tr:active td{background:var(--brand-soft)}
-  td.brand-col .cn{font-weight:600;font-size:13.5px;overflow:hidden;text-overflow:ellipsis}
-  td.brand-col .en{font-size:11px;color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;text-transform:uppercase}
+  table.main thead th.brand-col{z-index:12}
+  table.main tbody td{padding:9px 5px;text-align:center;border-bottom:1px solid var(--line);font-size:13px;white-space:nowrap}
+  table.main tbody tr:last-child td{border-bottom:none}
+  table.main tbody tr:active td{background:var(--brand-soft)}
+  tr.group td{
+    background:var(--none-bg)!important;color:var(--ink-2);font-size:11.5px;font-weight:700;
+    text-align:left;padding:6px 12px;letter-spacing:.03em;
+  }
+  td.brand-col .cn{font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis}
+  td.brand-col .en{font-size:10.5px;color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;text-transform:uppercase}
 
   .rate{display:inline-block;min-width:44px;padding:3px 6px;border-radius:8px;font-variant-numeric:tabular-nums;font-weight:600}
   .rate.normal{color:var(--ink)}
   .rate.best{background:var(--good-bg);color:var(--good)}
   .rate.zero{background:var(--zero-bg);color:var(--zero)}
   .rate.none{background:var(--none-bg);color:var(--none);font-weight:400;font-size:11px}
+  .rate.ask{background:var(--ask-bg);color:var(--ask);font-weight:600;font-size:11px}
+  .rate.base{color:var(--ink-3);font-weight:400}
+  .rate.lit{color:var(--ink);font-weight:500;font-size:11px}
+  .rate.lit.zero{color:var(--zero);background:var(--zero-bg)}
 
   .empty{padding:44px 16px;text-align:center;color:var(--ink-3);font-size:14px}
   .empty .big{font-size:34px;margin-bottom:8px}
@@ -170,7 +208,7 @@
     background:var(--card);color:var(--ink);
   }
   .preview-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:10px}
-  table.preview{min-width:760px;width:100%}
+  table.preview{min-width:760px;width:100%;border-collapse:collapse}
   table.preview th{font-size:11px;padding:8px 4px;background:var(--none-bg);position:static}
   table.preview td{padding:4px;border-bottom:1px solid var(--line)}
   table.preview input{
@@ -200,7 +238,7 @@
 
   <div class="disclaimer" role="alert">
     <span class="ico">⚠️</span>
-    <span><b>免责声明：</b>返点比例随时可能调整，本工具数据仅供参考，请以购买当日店内实际政策为准。<span style="opacity:.85">Rates are volatile and for reference only — always confirm in store.</span></span>
+    <span><b>点数变化频繁：</b>购物当天请主动问客服要最新返点表。本工具数据仅供参考，请以店内实际政策为准。</span>
   </div>
 
   <nav class="tabs" role="tablist">
@@ -220,12 +258,19 @@
     </div>
   </div>
 
+  <details class="info">
+    <summary>📌 基础点 · 0% 零返点须知 · 结算规则<span class="chev">▾</span></summary>
+    <div class="info-body" id="infoBody"></div>
+  </details>
+
   <div class="meta-row">
     <span id="countInfo"></span>
     <span class="legend">
       <span><i class="dot best"></i>本行最高</span>
-      <span><i class="dot zero"></i>0% 返点</span>
+      <span><i class="dot zero"></i>0%</span>
+      <span><i class="dot ask"></i>详询</span>
       <span><i class="dot none"></i>无柜台</span>
+      <span>–&nbsp;按基础点</span>
     </span>
   </div>
 
@@ -246,7 +291,7 @@
           <button class="btn" id="addRowBtn">＋ 手动添加品牌</button>
           <button class="btn" id="exportBtn">⬇ 导出 JSON</button>
           <button class="btn" id="importBtn">⬆ 导入 JSON</button>
-          <button class="btn danger" id="resetBtn">↺ 恢复示例数据</button>
+          <button class="btn danger" id="resetBtn">↺ 恢复内置数据</button>
         </div>
         <div class="hint">
           OCR 说明：上传商场发布的返点表截图，系统自动识别品牌名与各店比例，识别结果可在导入前逐格校对修改。
@@ -258,7 +303,7 @@
     </details>
   </div>
 
-  <footer>Seoul SG Rebate Tool · 数据仅供参考 · 本地存储，无后端</footer>
+  <footer>Seoul SG Rebate Tool · 数据仅供参考 · 本地存储，无后端 · 可"添加到主屏幕"离线使用</footer>
 </div>
 
 <!-- OCR / preview modal -->
@@ -275,14 +320,17 @@
 
 <div class="toast" id="toast"></div>
 
+<script src="data.js"></script>
 <script>
 'use strict';
 /* =========================================================
    Seoul SG Rebate Inquiry Tool
-   - two datasets (fashion / beauty), six operators
-   - instant CN/EN search, 0% & no-counter alerts
+   - datasets from data.js (transcribed rebate sheets)
+   - six operators, instant CN/EN search
+   - cell semantics: number | 0 | "无"(no counter) |
+     "-"(base rate) | "询"(consult group) | literal string
    - OCR image import (Tesseract.js, lazy-loaded) w/ preview
-   - localStorage persistence, JSON import/export
+   - localStorage persistence, JSON import/export, PWA
    ========================================================= */
 
 const OPERATORS = [
@@ -291,85 +339,28 @@ const OPERATORS = [
   { key:'hyundai',cn:'现代',     en:'Hyundai' },
   { key:'lotteM', cn:'乐天明洞', en:'Lotte Myeongdong' },
   { key:'lotteJ', cn:'乐天蚕室', en:'Lotte Jamsil' },
-  { key:'acheer', cn:"A'CHEER",  en:'A’CHEER' },
+  { key:'acheer', cn:'爱宝客',   en:"A'CHEER" },
 ];
 const TAB_LABELS = { fashion:'综合/奢侈品/时尚', beauty:'香化' };
-const STORE_KEY = 'sgRebate_v1';
+const STORE_KEY = 'sgRebate_v2';
+const SEED = window.SG_SEED;
 
-/* rate value semantics:  number => percent, 0 => zero-rebate alert,
-   null => no counter, string kept as-is (e.g. "10-15") */
+/* flatten data.js seed (grouped rows) into brand objects */
 function seedData(){
-  const F = (cn,en,...r)=>({cn,en,rates:Object.fromEntries(OPERATORS.map((o,i)=>[o.key,r[i]===undefined?null:r[i]]))});
-  return {
-    version:1,
-    updatedAt:'2026-07-07T00:00:00.000Z',
-    source:'示例数据 Sample data',
-    tabs:{
-      fashion:{ label:TAB_LABELS.fashion, brands:[
-        F('香奈儿','CHANEL',            10,10, 8,10,null,null),
-        F('爱马仕','HERMES',             0, 0, 0, 0,null,null),
-        F('劳力士','ROLEX',              5, 5,null, 5,null,null),
-        F('卡地亚','CARTIER',           10,12,10,10,10,null),
-        F('梵克雅宝','VAN CLEEF & ARPELS',10,12,10,10,null,null),
-        F('宝格丽','BVLGARI',           12,12,10,12,10,null),
-        F('蒂芙尼','TIFFANY & CO.',     10,10,10,10,10,null),
-        F('迪奥','DIOR',                10,10, 8,10,null,null),
-        F('路易威登','LOUIS VUITTON',    0, 0,null, 0,null,null),
-        F('古驰','GUCCI',               15,17,15,15,15,15),
-        F('普拉达','PRADA',             15,15,12,15,12,null),
-        F('缪缪','MIU MIU',             15,15,12,15,12,null),
-        F('葆蝶家','BOTTEGA VENETA',    15,15,15,15,12,null),
-        F('思琳','CELINE',              12,12,10,12,null,null),
-        F('罗意威','LOEWE',             15,15,12,15,12,null),
-        F('圣罗兰','SAINT LAURENT',     15,17,15,15,15,null),
-        F('巴黎世家','BALENCIAGA',      15,17,15,15,15,null),
-        F('芬迪','FENDI',               15,15,12,15,12,null),
-        F('博柏利','BURBERRY',          17,17,15,17,15,15),
-        F('盟可睐','MONCLER',           12,12,10,12,10,null),
-        F('小脏鞋','GOLDEN GOOSE',      15,15,15,15,15,15),
-        F('亚历山大麦昆','ALEXANDER MCQUEEN',15,15,12,15,null,null),
-        F('托德斯','TOD’S',        15,15,12,15,12,null),
-        F('巴宝莉童装','BURBERRY KIDS', 15,null,null,15,null,null),
-        F('万宝龙','MONTBLANC',         15,15,12,15,12,null),
-        F('雷朋','RAY-BAN',             25,25,20,25,20,20),
-        F('新秀丽','SAMSONITE',         25,25,20,25,20,20),
-        F('斐乐','FILA',                20,20,20,20,20,25),
-        F('MLB','MLB',                  20,20,20,20,20,25),
-      ]},
-      beauty:{ label:TAB_LABELS.beauty, brands:[
-        F('兰蔻','LANCOME',             28,30,25,28,25,30),
-        F('雅诗兰黛','ESTEE LAUDER',    28,30,25,28,25,30),
-        F('海蓝之谜','LA MER',          20,22,18,20,18,20),
-        F('雪花秀','SULWHASOO',         30,32,28,30,28,32),
-        F('后','WHOO',                  30,32,28,30,28,32),
-        F('SK-II','SK-II',              20,22,18,20,18,20),
-        F('资生堂','SHISEIDO',          25,25,22,25,22,25),
-        F('肌肤之钥','CLE DE PEAU',     18,20,15,18,15,null),
-        F('赫莲娜','HELENA RUBINSTEIN', 22,25,20,22,20,25),
-        F('希思黎','SISLEY',            20,22,18,20,18,null),
-        F('莱珀妮','LA PRAIRIE',        18,20,15,18,null,null),
-        F('娇兰','GUERLAIN',            22,25,20,22,20,25),
-        F('娇韵诗','CLARINS',           25,28,22,25,22,28),
-        F('汤姆福特','TOM FORD BEAUTY', 15,15,12,15,12,15),
-        F('祖玛珑','JO MALONE',         12,12,10,12,10,12),
-        F('蒂普提克','DIPTYQUE',        10,10, 8,10,null,null),
-        F('香奈儿美妆','CHANEL BEAUTY',  0, 0, 0, 0,null,null),
-        F('迪奥美妆','DIOR BEAUTY',     12,12,10,12,10,null),
-        F('圣罗兰美妆','YSL BEAUTY',    25,28,22,25,22,28),
-        F('阿玛尼美妆','GIORGIO ARMANI',25,28,22,25,22,28),
-        F('魅可','MAC',                 28,30,25,28,25,30),
-        F('芭比波朗','BOBBI BROWN',     28,30,25,28,25,30),
-        F('科颜氏','KIEHL’S',      28,30,25,28,25,30),
-        F('伊索','AESOP',               10,10,null,10,null,null),
-        F('悦诗风吟','INNISFREE',       30,32,28,30,28,32),
-        F('兰芝','LANEIGE',             30,32,28,30,28,32),
-        F('赫妍','HERA',                30,32,28,30,28,32),
-        F('梦妆','MAMONDE',             30,32,28,30,null,32),
-        F('欧舒丹','L’OCCITANE',   25,25,22,25,22,25),
-        F('馥蕾诗','FRESH',             25,28,22,25,22,28),
-      ]},
-    },
-  };
+  const tabs = {};
+  for(const [tabKey, tab] of Object.entries(SEED.tabs)){
+    const brands = [];
+    for(const g of tab.groups){
+      for(const r of g.rows){
+        brands.push({
+          en:r[0], cn:r[1], cat:g.cat,
+          rates:Object.fromEntries(OPERATORS.map((o,i)=>[o.key, r[i+2]])),
+        });
+      }
+    }
+    tabs[tabKey] = { label:tab.label, brands };
+  }
+  return { version:SEED.version, updatedAt:SEED.updatedAt, source:SEED.source, tabs };
 }
 
 /* ---------- state ---------- */
@@ -382,7 +373,7 @@ function loadData(){
     const raw = localStorage.getItem(STORE_KEY);
     if(raw){
       const d = JSON.parse(raw);
-      if(d && d.tabs && d.tabs.fashion && d.tabs.beauty) return d;
+      if(d && d.version===SEED.version && d.tabs && d.tabs.fashion && d.tabs.beauty) return d;
     }
   }catch(e){ /* corrupted storage -> fall through to seed */ }
   return seedData();
@@ -394,25 +385,35 @@ function saveData(){
 }
 
 /* ---------- rate helpers ---------- */
+/* classes: none(无柜台) | base(按基础点) | ask(详询) | zero(0%) | normal(数字) | lit(其它字符串) */
 function classifyRate(v){
-  if(v===null || v===undefined || v==='' || v==='-') return 'none';
-  const n = parseFloat(v);
-  if(!isNaN(n) && n===0) return 'zero';
-  return 'normal';
+  if(v===null || v===undefined || v==='' || v==='无' || v==='无柜' || v==='无柜台') return 'none';
+  if(v==='-' || v==='–' || v==='—') return 'base';
+  if(v==='询' || v==='详询') return 'ask';
+  if(typeof v==='number') return v===0 ? 'zero' : 'normal';
+  const s = String(v).trim();
+  if(/^\d+(\.\d+)?%?$/.test(s)) return parseFloat(s)===0 ? 'zero' : 'normal';
+  return /^0/.test(s) ? 'lit zero' : 'lit';
 }
 function rateNumber(v){
-  const n = parseFloat(v);
-  return isNaN(n) ? -1 : n;
+  if(typeof v==='number') return v;
+  const s = String(v==null?'':v).trim();
+  return /^\d+(\.\d+)?%?$/.test(s) ? parseFloat(s) : -1;
 }
-function fmtRate(v){
-  const cls = classifyRate(v);
-  if(cls==='none') return '无柜台';
-  if(cls==='zero') return '0%';
-  return (typeof v==='number' ? v : String(v).replace(/%$/,'')) + '%';
+function fmtRate(v, cls){
+  switch(cls){
+    case 'none': return '无柜台';
+    case 'base': return '–';
+    case 'ask':  return '详询';
+    case 'zero': return '0%';
+    case 'normal': return rateNumber(v) + '%';
+    default: return String(v);
+  }
 }
+const RATE_TITLES = { none:'无柜台', base:'未单列，按基础点结算', ask:'详询特殊团', zero:'0% 零返点，请注意' };
 
 /* ---------- search ---------- */
-function norm(s){ return String(s||'').toLowerCase().replace(/[\s'’.\-&]/g,''); }
+function norm(s){ return String(s||'').toLowerCase().replace(/[\s'’.\-&｜|（）()]/g,''); }
 function matches(b, q){
   if(!q) return true;
   return norm(b.cn).includes(q) || norm(b.en).includes(q);
@@ -420,7 +421,6 @@ function matches(b, q){
 function highlight(text, qRaw){
   const safe = escapeHtml(text);
   if(!qRaw) return safe;
-  // simple case-insensitive contiguous highlight on the raw string
   const idx = text.toLowerCase().indexOf(qRaw.toLowerCase());
   if(idx<0) return safe;
   return escapeHtml(text.slice(0,idx)) + '<mark>' + escapeHtml(text.slice(idx,idx+qRaw.length)) + '</mark>' + escapeHtml(text.slice(idx+qRaw.length));
@@ -438,22 +438,29 @@ function render(){
   document.getElementById('countInfo').textContent =
     query ? `匹配 ${list.length} / ${tab.brands.length} 个品牌` : `共 ${tab.brands.length} 个品牌`;
   document.getElementById('updatedInfo').textContent =
-    `数据更新：${new Date(DATA.updatedAt).toLocaleString('zh-CN',{hour12:false})}${DATA.source? ' · '+DATA.source:''}`;
+    `数据版本：${DATA.source||''} · 本地更新 ${new Date(DATA.updatedAt).toLocaleString('zh-CN',{hour12:false})}`;
+
+  renderInfo();
 
   const scroll = document.getElementById('tableScroll');
   if(!list.length){
-    scroll.innerHTML = `<div class="empty"><div class="big">🔍</div>未找到「${escapeHtml(query)}」相关品牌<br><span style="font-size:12px">可尝试英文名，或通过下方“数据管理”导入最新返点图</span></div>`;
+    scroll.innerHTML = `<div class="empty"><div class="big">🔍</div>未找到「${escapeHtml(query)}」相关品牌<br><span style="font-size:12px">未列出的品牌按基础点结算（见上方须知）；也可通过"数据管理"导入最新返点图</span></div>`;
     return;
   }
 
-  let html = '<table role="table"><thead><tr><th class="brand-col">品牌<span class="en">Brand</span></th>';
+  const showGroups = new Set(tab.brands.map(b=>b.cat)).size > 1;
+  let html = '<table class="main" role="table"><thead><tr><th class="brand-col">品牌<span class="en">Brand</span></th>';
   for(const op of OPERATORS){
     html += `<th>${escapeHtml(op.cn)}<span class="en">${escapeHtml(op.en)}</span></th>`;
   }
   html += '</tr></thead><tbody>';
 
+  let lastCat = null;
   for(const b of list){
-    // best = highest numeric rate in the row (>0)
+    if(showGroups && b.cat && b.cat!==lastCat){
+      html += `<tr class="group"><td class="brand-col">${escapeHtml(b.cat)}</td><td colspan="${OPERATORS.length}"></td></tr>`;
+      lastCat = b.cat;
+    }
     let best = -1;
     for(const op of OPERATORS){
       const n = rateNumber(b.rates[op.key]);
@@ -464,12 +471,35 @@ function render(){
       const v = b.rates[op.key];
       const cls = classifyRate(v);
       const isBest = cls==='normal' && best>0 && rateNumber(v)===best;
-      html += `<td><span class="rate ${isBest?'best':cls}">${fmtRate(v)}</span></td>`;
+      const title = RATE_TITLES[cls] || '';
+      html += `<td><span class="rate ${isBest?'best':cls}"${title?` title="${title}"`:''}>${escapeHtml(fmtRate(v,cls))}</span></td>`;
     }
     html += '</tr>';
   }
   html += '</tbody></table>';
   scroll.innerHTML = html;
+}
+
+/* ---------- info panel (base rates & notices) ---------- */
+function renderInfo(){
+  const n = SEED.notices, base = SEED.tabs[activeTab].base;
+  let html = `<h3>基础点（${escapeHtml(TAB_LABELS[activeTab])}，未单列/标注「–」的品牌按此结算）</h3>
+    <div class="base-scroll"><table class="base"><thead><tr><th>类别</th>${OPERATORS.map(o=>`<th>${o.cn}</th>`).join('')}</tr></thead><tbody>`;
+  for(const row of base){
+    html += `<tr><td>${escapeHtml(row[0])}</td>${row.slice(1).map(v=>{
+      const z = v===0;
+      return `<td${z?' style="color:var(--zero);font-weight:700"':''}>${v}%</td>`;
+    }).join('')}</tr>`;
+  }
+  html += '</tbody></table></div>';
+  html += `<h3>🚫 零返点【0%】请注意</h3><ul class="zero-list">${
+    n.zero.map(([store,txt])=>`<li><b>${escapeHtml(store)}：</b>${escapeHtml(txt)}</li>`).join('')}</ul>`;
+  html += `<h3>折扣与结算规则</h3><ul class="rule-list">${
+    n.discount.map(t=>`<li>${escapeHtml(t)}</li>`).join('')}
+    <li>${escapeHtml(n.baseRule)}</li>
+    <li>返点算法：${escapeHtml(n.algo)}</li>
+    <li>付款方式：${escapeHtml(n.payment)}</li></ul>`;
+  document.getElementById('infoBody').innerHTML = html;
 }
 
 /* ---------- tabs & search wiring ---------- */
@@ -535,7 +565,7 @@ function loadTesseract(){
   return tessLoading;
 }
 
-const RATE_TOKEN = /^(\d{1,2}(?:\.\d+)?(?:-\d{1,2}(?:\.\d+)?)?%?|[-–—~xX×\/]|无柜台|无柜|无)$/;
+const RATE_TOKEN = /^(\d{1,2}(?:\.\d+)?(?:-\d{1,2}(?:\.\d+)?)?%?|[-–—~xX×\/]|详询|询|无柜台|无柜|无)$/;
 
 /* Parse OCR plain text into candidate rows.
    Strategy: walk each line's whitespace tokens from the END, collecting
@@ -553,7 +583,7 @@ function parseOcrText(text){
       i--;
     }
     if(rates.length < 3) continue;                 // not a data row
-    while(rates.length < OPERATORS.length) rates.push(null);
+    while(rates.length < OPERATORS.length) rates.push('-');
     const head = tokens.slice(0,i+1).join(' ').trim();
     if(!head) continue;
     const cn = (head.match(/[一-鿿㐀-䶿]+/g)||[]).join('');
@@ -564,7 +594,9 @@ function parseOcrText(text){
   return rows;
 }
 function normalizeRateToken(t){
-  if(/^([-–—~xX×\/]|无柜台|无柜|无)$/.test(t)) return null;
+  if(/^([-–—~\/])$/.test(t)) return '-';            // base rate applies
+  if(/^([xX×]|无柜台|无柜|无)$/.test(t)) return '无'; // no counter
+  if(/^(详询|询)$/.test(t)) return '询';
   const v = t.replace(/%$/,'');
   if(/^\d{1,2}(\.\d+)?$/.test(v)) return parseFloat(v);
   return v; // range like "10-15" kept as string
@@ -601,7 +633,7 @@ document.getElementById('ocrFile').addEventListener('change', async e=>{
     }
     await worker.terminate();
     if(!allRows.length){
-      openModal('识别完成','<div class="empty" style="padding:24px"><div class="big">😕</div>未能从图片中解析出结构化数据。<br><span style="font-size:12px">请尝试更清晰的截图，或使用“手动添加/导入 JSON”。</span></div>',
+      openModal('识别完成','<div class="empty" style="padding:24px"><div class="big">😕</div>未能从图片中解析出结构化数据。<br><span style="font-size:12px">请尝试更清晰的截图，或使用"手动添加/导入 JSON"。</span></div>',
         '<button class="btn" onclick="document.getElementById(\'modalClose\').click()">关闭</button>');
       return;
     }
@@ -628,7 +660,7 @@ function showPreview(rows, note){
     <div class="preview-scroll"><table class="preview"><thead><tr>
       <th>中文名</th><th>英文名</th>${OPERATORS.map(o=>`<th>${o.cn}</th>`).join('')}<th></th>
     </tr></thead><tbody id="previewBody"></tbody></table></div>
-    <div class="hint" style="margin-top:8px">空值 = 无柜台；0 会以红色 0% 警示显示；同名品牌将覆盖原有数据。</div>`;
+    <div class="hint" style="margin-top:8px">留空或"-" = 按基础点；"无" = 无柜台；"询" = 详询特殊团；0 会以红色 0% 警示显示。同名品牌将覆盖原有数据。</div>`;
   openModal('✅ 校对识别结果', body,
     `<button class="btn" id="pvCancel">取消</button>
      <button class="btn primary" id="pvConfirm">合并导入</button>`);
@@ -642,17 +674,17 @@ function renderPreviewBody(){
     <tr data-i="${idx}">
       <td><input data-f="cn" value="${escapeHtml(r.cn)}" placeholder="中文名"></td>
       <td><input data-f="en" value="${escapeHtml(r.en)}" placeholder="EN"></td>
-      ${OPERATORS.map(o=>`<td><input data-f="${o.key}" inputmode="decimal" value="${r.rates[o.key]==null?'':escapeHtml(String(r.rates[o.key]))}" placeholder="-"></td>`).join('')}
+      ${OPERATORS.map(o=>{
+        const v = r.rates[o.key];
+        return `<td><input data-f="${o.key}" value="${v==null?'':escapeHtml(String(v))}" placeholder="-"></td>`;
+      }).join('')}
       <td><button class="del" title="删除此行">🗑</button></td>
     </tr>`).join('');
   tb.querySelectorAll('input').forEach(inp=>{
     inp.addEventListener('input',()=>{
       const tr = inp.closest('tr'), i = +tr.dataset.i, f = inp.dataset.f;
       if(f==='cn'||f==='en') previewRows[i][f]=inp.value.trim();
-      else{
-        const v = inp.value.trim();
-        previewRows[i].rates[f] = v==='' ? null : (/^\d{1,2}(\.\d+)?$/.test(v)? parseFloat(v) : v);
-      }
+      else previewRows[i].rates[f] = normalizeRateToken(inp.value.trim() || '-');
     });
   });
   tb.querySelectorAll('.del').forEach(btn=>{
@@ -672,9 +704,9 @@ function confirmImport(){
     const idx = list.findIndex(b=>
       (r.en && norm(b.en)===norm(r.en)) || (r.cn && norm(b.cn)===norm(r.cn)));
     if(idx>=0){ list[idx]={...list[idx],...r}; updated++; }
-    else{ list.push(r); added++; }
+    else{ list.push({cat:'导入', ...r}); added++; }
   }
-  DATA.source = 'OCR/手动导入';
+  DATA.source = (DATA.source||'') + ' +OCR/手动导入';
   saveData();
   closeModal();
   if(target!==activeTab){
@@ -690,7 +722,7 @@ function confirmImport(){
 
 /* ---------- manual add ---------- */
 document.getElementById('addRowBtn').addEventListener('click',()=>{
-  showPreview([{cn:'',en:'',rates:Object.fromEntries(OPERATORS.map(o=>[o.key,null]))}], '手动录入一条品牌数据');
+  showPreview([{cn:'',en:'',rates:Object.fromEntries(OPERATORS.map(o=>[o.key,'-']))}], '手动录入一条品牌数据');
 });
 
 /* ---------- export / import / reset ---------- */
@@ -713,17 +745,25 @@ document.getElementById('jsonFile').addEventListener('change', async e=>{
   try{
     const d = JSON.parse(await f.text());
     if(!d || !d.tabs || !d.tabs.fashion || !d.tabs.beauty) throw new Error('JSON 结构不符合本工具格式');
+    d.version = SEED.version;
     DATA = d;
     saveData(); render();
     toast('JSON 导入成功');
   }catch(err){ toast('导入失败：'+err.message); }
 });
 document.getElementById('resetBtn').addEventListener('click',()=>{
-  if(!confirm('确定恢复为内置示例数据？当前本地数据将被覆盖。')) return;
+  if(!confirm('确定恢复为内置返点数据（4.18 版）？当前本地修改将被覆盖。')) return;
   DATA = seedData();
   saveData(); render();
-  toast('已恢复示例数据');
+  toast('已恢复内置数据');
 });
+
+/* ---------- PWA ---------- */
+if('serviceWorker' in navigator && location.protocol==='https:'){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('sw.js').catch(()=>{/* offline support unavailable */});
+  });
+}
 
 /* ---------- boot ---------- */
 render();
