@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#2563eb" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b1220" media="(prefers-color-scheme: dark)">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="SG返点">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>首尔 SG 返点查询 | Seoul SG Rebate</title>
+<style>
+  :root{
+    --bg:#f4f6fa; --card:#ffffff; --ink:#0f172a; --ink-2:#475569; --ink-3:#94a3b8;
+    --line:#e2e8f0; --brand:#2563eb; --brand-soft:#dbeafe;
+    --good:#047857; --good-bg:#d1fae5;
+    --zero:#b91c1c; --zero-bg:#fee2e2;
+    --none:#64748b; --none-bg:#f1f5f9;
+    --ask:#b45309; --ask-bg:#fef3c7;
+    --warn-bg:#fef3c7; --warn-ink:#92400e; --warn-line:#fcd34d;
+    --radius:14px; --shadow:0 1px 3px rgba(15,23,42,.08),0 4px 14px rgba(15,23,42,.05);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0b1220; --card:#151e31; --ink:#e2e8f0; --ink-2:#94a3b8; --ink-3:#64748b;
+      --line:#26324a; --brand:#60a5fa; --brand-soft:#1e3a5f;
+      --good:#34d399; --good-bg:#0b3b2e;
+      --zero:#f87171; --zero-bg:#4a1414;
+      --none:#94a3b8; --none-bg:#1e293b;
+      --ask:#fbbf24; --ask-bg:#3a2e0e;
+      --warn-bg:#3a2e0e; --warn-ink:#fcd34d; --warn-line:#6b5416;
+      --shadow:0 1px 3px rgba(0,0,0,.4);
+    }
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    background:var(--bg); color:var(--ink); line-height:1.5;
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  .wrap{max-width:960px;margin:0 auto;padding:0 12px 48px}
+
+  /* ---- header ---- */
+  header{padding:20px 4px 12px}
+  header h1{font-size:20px;font-weight:700;display:flex;align-items:center;gap:8px}
+  header h1 .flag{font-size:22px}
+  header .sub{font-size:12.5px;color:var(--ink-2);margin-top:2px}
+
+  .disclaimer{
+    background:var(--warn-bg);color:var(--warn-ink);border:1px solid var(--warn-line);
+    border-radius:var(--radius);padding:10px 12px;font-size:12.5px;margin:4px 0 14px;
+    display:flex;gap:8px;align-items:flex-start;
+  }
+  .disclaimer .ico{flex:none}
+
+  /* ---- tabs ---- */
+  .tabs{display:flex;gap:8px;margin-bottom:12px}
+  .tab{
+    flex:1;padding:11px 8px;border-radius:var(--radius);border:1px solid var(--line);
+    background:var(--card);color:var(--ink-2);font-size:14px;font-weight:600;
+    cursor:pointer;text-align:center;transition:all .15s;box-shadow:var(--shadow);
+  }
+  .tab .en{display:block;font-size:10.5px;font-weight:400;color:var(--ink-3);margin-top:1px}
+  .tab.active{background:var(--brand);border-color:var(--brand);color:#fff}
+  .tab.active .en{color:rgba(255,255,255,.75)}
+
+  /* ---- search ---- */
+  .searchbar{position:sticky;top:0;z-index:30;padding:8px 0;background:var(--bg)}
+  .searchbar .box{
+    display:flex;align-items:center;gap:8px;background:var(--card);
+    border:1.5px solid var(--line);border-radius:var(--radius);padding:10px 14px;box-shadow:var(--shadow);
+  }
+  .searchbar .box:focus-within{border-color:var(--brand)}
+  .searchbar svg{flex:none;color:var(--ink-3)}
+  .searchbar input{
+    flex:1;border:none;outline:none;background:transparent;color:var(--ink);
+    font-size:16px; /* 16px prevents iOS zoom */
+  }
+  .searchbar .clear{
+    flex:none;border:none;background:var(--none-bg);color:var(--ink-2);border-radius:50%;
+    width:22px;height:22px;font-size:13px;cursor:pointer;display:none;line-height:1;
+  }
+  .searchbar.has-text .clear{display:block}
+
+  .meta-row{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--ink-3);padding:2px 4px 8px;flex-wrap:wrap;gap:4px}
+  .legend{display:flex;gap:9px;flex-wrap:wrap}
+  .legend span{display:inline-flex;align-items:center;gap:3px}
+  .dot{width:9px;height:9px;border-radius:3px;display:inline-block}
+  .dot.best{background:var(--good)} .dot.zero{background:var(--zero)}
+  .dot.none{background:var(--ink-3)} .dot.ask{background:var(--ask)}
+
+  /* ---- info panel (base rates & rules) ---- */
+  details.info{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:12px}
+  details.info summary{
+    padding:11px 14px;font-size:13.5px;font-weight:600;cursor:pointer;list-style:none;
+    display:flex;align-items:center;gap:8px;color:var(--ink-2);
+  }
+  details.info summary::-webkit-details-marker{display:none}
+  details.info summary .chev{margin-left:auto;transition:transform .2s;color:var(--ink-3)}
+  details.info[open] summary .chev{transform:rotate(180deg)}
+  .info-body{padding:0 14px 14px;font-size:12.5px;color:var(--ink-2)}
+  .info-body h3{font-size:12.5px;color:var(--ink);margin:12px 0 6px}
+  .info-body h3:first-child{margin-top:0}
+  .base-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:10px}
+  table.base{border-collapse:collapse;width:100%;min-width:560px;font-size:12px}
+  table.base th{background:var(--none-bg);color:var(--ink-2);font-weight:600;padding:7px 6px;white-space:nowrap}
+  table.base td{padding:6px;text-align:center;border-top:1px solid var(--line);white-space:nowrap}
+  table.base td:first-child{text-align:left;font-weight:600;color:var(--ink)}
+  .zero-list{list-style:none;display:flex;flex-direction:column;gap:6px}
+  .zero-list b{color:var(--zero)}
+  .rule-list{padding-left:18px}
+
+  /* ---- table ---- */
+  .table-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+  .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  table.main{border-collapse:separate;border-spacing:0;width:100%;min-width:660px}
+  table.main thead th{
+    position:sticky;top:0;z-index:10;background:var(--card);
+    font-size:11.5px;color:var(--ink-2);font-weight:600;text-align:center;
+    padding:10px 6px;border-bottom:1.5px solid var(--line);white-space:nowrap;
+  }
+  table.main thead th .en{display:block;font-size:9.5px;font-weight:400;color:var(--ink-3)}
+  th.brand-col, td.brand-col{
+    position:sticky;left:0;z-index:11;background:var(--card);
+    text-align:left;padding-left:12px;min-width:122px;max-width:158px;
+    border-right:1px solid var(--line);
+    box-shadow:2px 0 4px -2px rgba(15,23,42,.12);
+  }
+  table.main thead th.brand-col{z-index:12}
+  table.main tbody td{padding:9px 5px;text-align:center;border-bottom:1px solid var(--line);font-size:13px;white-space:nowrap}
+  table.main tbody tr:last-child td{border-bottom:none}
+  table.main tbody tr:active td{background:var(--brand-soft)}
+  tr.group td{
+    background:var(--none-bg)!important;color:var(--ink-2);font-size:11.5px;font-weight:700;
+    text-align:left;padding:6px 12px;letter-spacing:.03em;
+  }
+  td.brand-col .cn{font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis}
+  td.brand-col .en{font-size:10.5px;color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;text-transform:uppercase}
+
+  .rate{display:inline-block;min-width:44px;padding:3px 6px;border-radius:8px;font-variant-numeric:tabular-nums;font-weight:600}
+  .rate.normal{color:var(--ink)}
+  .rate.best{background:var(--good-bg);color:var(--good)}
+  .rate.zero{background:var(--zero-bg);color:var(--zero)}
+  .rate.none{background:var(--none-bg);color:var(--none);font-weight:400;font-size:11px}
+  .rate.ask{background:var(--ask-bg);color:var(--ask);font-weight:600;font-size:11px}
+  .rate.base{color:var(--ink-3);font-weight:400}
+  .rate.lit{color:var(--ink);font-weight:500;font-size:11px}
+  .rate.lit.zero{color:var(--zero);background:var(--zero-bg)}
+
+  .empty{padding:44px 16px;text-align:center;color:var(--ink-3);font-size:14px}
+  .empty .big{font-size:34px;margin-bottom:8px}
+
+  mark{background:transparent;color:var(--brand);font-weight:700}
+
+  /* ---- toolbar (data management) ---- */
+  .toolbar{margin-top:16px}
+  details.mgmt{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+  details.mgmt summary{
+    padding:13px 16px;font-size:14px;font-weight:600;cursor:pointer;list-style:none;
+    display:flex;align-items:center;gap:8px;color:var(--ink-2);
+  }
+  details.mgmt summary::-webkit-details-marker{display:none}
+  details.mgmt summary .chev{margin-left:auto;transition:transform .2s;color:var(--ink-3)}
+  details.mgmt[open] summary .chev{transform:rotate(180deg)}
+  .mgmt-body{padding:0 16px 16px;display:flex;flex-direction:column;gap:10px}
+  .btn-row{display:flex;gap:8px;flex-wrap:wrap}
+  .btn{
+    border:1px solid var(--line);background:var(--card);color:var(--ink);
+    padding:10px 14px;border-radius:10px;font-size:13.5px;font-weight:600;cursor:pointer;
+    display:inline-flex;align-items:center;gap:6px;transition:opacity .15s;
+  }
+  .btn:active{opacity:.7}
+  .btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+  .btn.danger{color:var(--zero);border-color:var(--zero)}
+  .hint{font-size:12px;color:var(--ink-3)}
+
+  /* ---- OCR modal ---- */
+  .modal-mask{
+    position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:100;
+    display:none;align-items:flex-end;justify-content:center;
+  }
+  .modal-mask.open{display:flex}
+  .modal{
+    background:var(--card);width:100%;max-width:960px;max-height:88vh;
+    border-radius:18px 18px 0 0;display:flex;flex-direction:column;overflow:hidden;
+  }
+  @media (min-width:700px){
+    .modal-mask{align-items:center;padding:24px}
+    .modal{border-radius:18px;max-height:82vh}
+  }
+  .modal-head{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
+  .modal-head h2{font-size:16px}
+  .modal-head .x{border:none;background:var(--none-bg);color:var(--ink-2);width:28px;height:28px;border-radius:50%;font-size:15px;cursor:pointer}
+  .modal-body{padding:14px 16px;overflow-y:auto;flex:1}
+  .modal-foot{padding:12px 16px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end}
+
+  .progress-wrap{margin:8px 0}
+  .progress-txt{font-size:13px;color:var(--ink-2);margin-bottom:6px}
+  .progress-bar{height:8px;background:var(--none-bg);border-radius:99px;overflow:hidden}
+  .progress-bar i{display:block;height:100%;width:0;background:var(--brand);border-radius:99px;transition:width .2s}
+
+  .field-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:13.5px;flex-wrap:wrap}
+  select,.field-row input[type=text]{
+    border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:14px;
+    background:var(--card);color:var(--ink);
+  }
+  .preview-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:10px}
+  table.preview{min-width:760px;width:100%;border-collapse:collapse}
+  table.preview th{font-size:11px;padding:8px 4px;background:var(--none-bg);position:static}
+  table.preview td{padding:4px;border-bottom:1px solid var(--line)}
+  table.preview input{
+    width:100%;min-width:52px;border:1px solid transparent;background:transparent;color:var(--ink);
+    padding:6px 4px;border-radius:6px;font-size:13px;text-align:center;
+  }
+  table.preview td:nth-child(1) input,table.preview td:nth-child(2) input{text-align:left;min-width:90px}
+  table.preview input:focus{outline:none;border-color:var(--brand);background:var(--bg)}
+  table.preview .del{border:none;background:transparent;color:var(--zero);font-size:15px;cursor:pointer;padding:4px 8px}
+
+  .toast{
+    position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);
+    background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:99px;
+    font-size:13.5px;opacity:0;pointer-events:none;transition:all .25s;z-index:200;white-space:nowrap;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  footer{margin-top:22px;text-align:center;font-size:11.5px;color:var(--ink-3)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1><span class="flag">🇰🇷</span>首尔 SG 返点查询</h1>
+    <div class="sub">Seoul SG Mode · 六大免税店返点实时对比 · 中/英文品牌搜索</div>
+  </header>
+
+  <div class="disclaimer" role="alert">
+    <span class="ico">⚠️</span>
+    <span><b>点数变化频繁：</b>购物当天请主动问客服要最新返点表。本工具数据仅供参考，请以店内实际政策为准。</span>
+  </div>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab active" role="tab" data-tab="fashion" aria-selected="true">
+      综合 / 奢侈品 / 时尚<span class="en">General · Luxury · Fashion</span>
+    </button>
+    <button class="tab" role="tab" data-tab="beauty" aria-selected="false">
+      香化<span class="en">Fragrance · Cosmetics</span>
+    </button>
+  </nav>
+
+  <div class="searchbar" id="searchbar">
+    <div class="box">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="searchInput" type="search" aria-label="搜索品牌" placeholder="搜索品牌（中文或英文）… e.g. 香奈儿 / Chanel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+      <button class="clear" id="clearBtn" aria-label="清除">✕</button>
+    </div>
+  </div>
+
+  <details class="info">
+    <summary>📌 基础点 · 0% 零返点须知 · 结算规则<span class="chev">▾</span></summary>
+    <div class="info-body" id="infoBody"></div>
+  </details>
+
+  <div class="meta-row">
+    <span id="countInfo"></span>
+    <span class="legend">
+      <span><i class="dot best"></i>本行最高</span>
+      <span><i class="dot zero"></i>0%</span>
+      <span><i class="dot ask"></i>详询</span>
+      <span><i class="dot none"></i>无柜台</span>
+      <span>–&nbsp;按基础点</span>
+    </span>
+  </div>
+
+  <div class="table-card">
+    <div class="table-scroll" id="tableScroll"></div>
+  </div>
+  <div class="meta-row" style="padding-top:8px"><span id="updatedInfo"></span></div>
+
+  <div class="toolbar">
+    <details class="mgmt">
+      <summary>
+        <span>🛠️ 数据管理 · 图片识别导入</span>
+        <span class="chev">▾</span>
+      </summary>
+      <div class="mgmt-body">
+        <div class="btn-row">
+          <button class="btn primary" id="ocrBtn">📷 上传返点图 OCR 识别</button>
+          <button class="btn" id="addRowBtn">＋ 手动添加品牌</button>
+          <button class="btn" id="exportBtn">⬇ 导出 JSON</button>
+          <button class="btn" id="importBtn">⬆ 导入 JSON</button>
+          <button class="btn danger" id="resetBtn">↺ 恢复内置数据</button>
+        </div>
+        <div class="hint">
+          OCR 说明：上传商场发布的返点表截图（建议只截品牌表格区域，清晰原图效果最佳），系统自动定位表格列并识别品牌与比例，
+          结果先进入校对表格，逐格核对后再导入。识别引擎（Tesseract.js，中英文）首次使用需联网加载。
+          数据保存在本机浏览器中，不会上传服务器。
+        </div>
+        <input type="file" id="ocrFile" accept="image/*" multiple hidden>
+        <input type="file" id="jsonFile" accept=".json,application/json" hidden>
+      </div>
+    </details>
+  </div>
+
+  <footer>Seoul SG Rebate Tool · 数据仅供参考 · 本地存储，无后端 · 可"添加到主屏幕"离线使用</footer>
+</div>
+
+<!-- OCR / preview modal -->
+<div class="modal-mask" id="modalMask">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-head">
+      <h2 id="modalTitle">图片识别</h2>
+      <button class="x" id="modalClose" aria-label="关闭">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-foot" id="modalFoot"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="data.js"></script>
+<script src="ocr.js"></script>
+<script>
+'use strict';
+/* =========================================================
+   Seoul SG Rebate Inquiry Tool
+   - datasets from data.js (transcribed rebate sheets)
+   - six operators, instant CN/EN search
+   - cell semantics: number | 0 | "无"(no counter) |
+     "-"(base rate) | "询"(consult group) | literal string
+   - OCR image import (Tesseract.js, lazy-loaded) w/ preview
+   - localStorage persistence, JSON import/export, PWA
+   ========================================================= */
+
+const OPERATORS = [
+  { key:'ssg',    cn:'新世界',   en:'Shinsegae' },
+  { key:'shilla', cn:'新罗',     en:'Shilla' },
+  { key:'hyundai',cn:'现代',     en:'Hyundai' },
+  { key:'lotteM', cn:'乐天明洞', en:'Lotte Myeongdong' },
+  { key:'lotteJ', cn:'乐天蚕室', en:'Lotte Jamsil' },
+  { key:'acheer', cn:'爱宝客',   en:"A'CHEER" },
+];
+const TAB_LABELS = { fashion:'综合/奢侈品/时尚', beauty:'香化' };
+const STORE_KEY = 'sgRebate_v2';
+const SEED = window.SG_SEED;
+
+/* flatten data.js seed (grouped rows) into brand objects */
+function seedData(){
+  const tabs = {};
+  for(const [tabKey, tab] of Object.entries(SEED.tabs)){
+    const brands = [];
+    for(const g of tab.groups){
+      for(const r of g.rows){
+        brands.push({
+          en:r[0], cn:r[1], cat:g.cat,
+          rates:Object.fromEntries(OPERATORS.map((o,i)=>[o.key, r[i+2]])),
+        });
+      }
+    }
+    tabs[tabKey] = { label:tab.label, brands };
+  }
+  return { version:SEED.version, updatedAt:SEED.updatedAt, source:SEED.source, tabs };
+}
+
+/* ---------- state ---------- */
+let DATA = loadData();
+let activeTab = 'fashion';
+let query = '';
+
+function loadData(){
+  try{
+    const raw = localStorage.getItem(STORE_KEY);
+    if(raw){
+      const d = JSON.parse(raw);
+      if(d && d.version===SEED.version && d.tabs && d.tabs.fashion && d.tabs.beauty) return d;
+    }
+  }catch(e){ /* corrupted storage -> fall through to seed */ }
+  return seedData();
+}
+function saveData(){
+  DATA.updatedAt = new Date().toISOString();
+  try{ localStorage.setItem(STORE_KEY, JSON.stringify(DATA)); }
+  catch(e){ toast('本地存储失败：'+e.message); }
+}
+
+/* ---------- rate helpers ---------- */
+/* classes: none(无柜台) | base(按基础点) | ask(详询) | zero(0%) | normal(数字) | lit(其它字符串) */
+function classifyRate(v){
+  if(v===null || v===undefined || v==='' || v==='无' || v==='无柜' || v==='无柜台') return 'none';
+  if(v==='-' || v==='–' || v==='—') return 'base';
+  if(v==='询' || v==='详询') return 'ask';
+  if(typeof v==='number') return v===0 ? 'zero' : 'normal';
+  const s = String(v).trim();
+  if(/^\d+(\.\d+)?%?$/.test(s)) return parseFloat(s)===0 ? 'zero' : 'normal';
+  return /^0/.test(s) ? 'lit zero' : 'lit';
+}
+function rateNumber(v){
+  if(typeof v==='number') return v;
+  const s = String(v==null?'':v).trim();
+  return /^\d+(\.\d+)?%?$/.test(s) ? parseFloat(s) : -1;
+}
+function fmtRate(v, cls){
+  switch(cls){
+    case 'none': return '无柜台';
+    case 'base': return '–';
+    case 'ask':  return '详询';
+    case 'zero': return '0%';
+    case 'normal': return rateNumber(v) + '%';
+    default: return String(v);
+  }
+}
+const RATE_TITLES = { none:'无柜台', base:'未单列，按基础点结算', ask:'详询特殊团', zero:'0% 零返点，请注意' };
+
+/* ---------- search ---------- */
+function norm(s){ return String(s||'').toLowerCase().replace(/[\s'’.\-&｜|（）()]/g,''); }
+function matches(b, q){
+  if(!q) return true;
+  return norm(b.cn).includes(q) || norm(b.en).includes(q);
+}
+function highlight(text, qRaw){
+  const safe = escapeHtml(text);
+  if(!qRaw) return safe;
+  const idx = text.toLowerCase().indexOf(qRaw.toLowerCase());
+  if(idx<0) return safe;
+  return escapeHtml(text.slice(0,idx)) + '<mark>' + escapeHtml(text.slice(idx,idx+qRaw.length)) + '</mark>' + escapeHtml(text.slice(idx+qRaw.length));
+}
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* ---------- render ---------- */
+function render(){
+  const tab = DATA.tabs[activeTab];
+  const q = norm(query);
+  const list = tab.brands.filter(b=>matches(b,q));
+
+  document.getElementById('countInfo').textContent =
+    query ? `匹配 ${list.length} / ${tab.brands.length} 个品牌` : `共 ${tab.brands.length} 个品牌`;
+  document.getElementById('updatedInfo').textContent =
+    `数据版本：${DATA.source||''} · 本地更新 ${new Date(DATA.updatedAt).toLocaleString('zh-CN',{hour12:false})}`;
+
+  renderInfo();
+
+  const scroll = document.getElementById('tableScroll');
+  if(!list.length){
+    scroll.innerHTML = `<div class="empty"><div class="big">🔍</div>未找到「${escapeHtml(query)}」相关品牌<br><span style="font-size:12px">未列出的品牌按基础点结算（见上方须知）；也可通过"数据管理"导入最新返点图</span></div>`;
+    return;
+  }
+
+  const showGroups = new Set(tab.brands.map(b=>b.cat)).size > 1;
+  let html = '<table class="main" role="table"><thead><tr><th class="brand-col">品牌<span class="en">Brand</span></th>';
+  for(const op of OPERATORS){
+    html += `<th>${escapeHtml(op.cn)}<span class="en">${escapeHtml(op.en)}</span></th>`;
+  }
+  html += '</tr></thead><tbody>';
+
+  let lastCat = null;
+  for(const b of list){
+    if(showGroups && b.cat && b.cat!==lastCat){
+      html += `<tr class="group"><td class="brand-col">${escapeHtml(b.cat)}</td><td colspan="${OPERATORS.length}"></td></tr>`;
+      lastCat = b.cat;
+    }
+    let best = -1;
+    for(const op of OPERATORS){
+      const n = rateNumber(b.rates[op.key]);
+      if(n>best) best = n;
+    }
+    html += `<tr><td class="brand-col"><div class="cn">${highlight(b.cn,query)}</div><div class="en">${highlight(b.en,query)}</div></td>`;
+    for(const op of OPERATORS){
+      const v = b.rates[op.key];
+      const cls = classifyRate(v);
+      const isBest = cls==='normal' && best>0 && rateNumber(v)===best;
+      const title = RATE_TITLES[cls] || '';
+      html += `<td><span class="rate ${isBest?'best':cls}"${title?` title="${title}"`:''}>${escapeHtml(fmtRate(v,cls))}</span></td>`;
+    }
+    html += '</tr>';
+  }
+  html += '</tbody></table>';
+  scroll.innerHTML = html;
+}
+
+/* ---------- info panel (base rates & notices) ---------- */
+function renderInfo(){
+  const n = SEED.notices, base = SEED.tabs[activeTab].base;
+  let html = `<h3>基础点（${escapeHtml(TAB_LABELS[activeTab])}，未单列/标注「–」的品牌按此结算）</h3>
+    <div class="base-scroll"><table class="base"><thead><tr><th>类别</th>${OPERATORS.map(o=>`<th>${o.cn}</th>`).join('')}</tr></thead><tbody>`;
+  for(const row of base){
+    html += `<tr><td>${escapeHtml(row[0])}</td>${row.slice(1).map(v=>{
+      const z = v===0;
+      return `<td${z?' style="color:var(--zero);font-weight:700"':''}>${v}%</td>`;
+    }).join('')}</tr>`;
+  }
+  html += '</tbody></table></div>';
+  html += `<h3>🚫 零返点【0%】请注意</h3><ul class="zero-list">${
+    n.zero.map(([store,txt])=>`<li><b>${escapeHtml(store)}：</b>${escapeHtml(txt)}</li>`).join('')}</ul>`;
+  html += `<h3>折扣与结算规则</h3><ul class="rule-list">${
+    n.discount.map(t=>`<li>${escapeHtml(t)}</li>`).join('')}
+    <li>${escapeHtml(n.baseRule)}</li>
+    <li>返点算法：${escapeHtml(n.algo)}</li>
+    <li>付款方式：${escapeHtml(n.payment)}</li></ul>`;
+  document.getElementById('infoBody').innerHTML = html;
+}
+
+/* ---------- tabs & search wiring ---------- */
+document.querySelectorAll('.tab').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    activeTab = btn.dataset.tab;
+    document.querySelectorAll('.tab').forEach(t=>{
+      const on = t===btn;
+      t.classList.toggle('active',on);
+      t.setAttribute('aria-selected',on);
+    });
+    render();
+  });
+});
+const searchInput = document.getElementById('searchInput');
+searchInput.addEventListener('input',()=>{
+  query = searchInput.value.trim();
+  document.getElementById('searchbar').classList.toggle('has-text',!!query);
+  render();
+});
+document.getElementById('clearBtn').addEventListener('click',()=>{
+  searchInput.value=''; query='';
+  document.getElementById('searchbar').classList.remove('has-text');
+  searchInput.focus(); render();
+});
+
+/* ---------- toast ---------- */
+let toastTimer;
+function toast(msg){
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>el.classList.remove('show'),2600);
+}
+
+/* ---------- modal helpers ---------- */
+const mask = document.getElementById('modalMask');
+function openModal(title, bodyHtml, footHtml){
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalBody').innerHTML = bodyHtml;
+  document.getElementById('modalFoot').innerHTML = footHtml || '';
+  mask.classList.add('open');
+}
+function closeModal(){ mask.classList.remove('open'); }
+document.getElementById('modalClose').addEventListener('click',closeModal);
+mask.addEventListener('click',e=>{ if(e.target===mask) closeModal(); });
+
+/* =========================================================
+   OCR pipeline (Tesseract.js lazy-loaded from CDN)
+   ========================================================= */
+const TESSERACT_SRC = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+let tessLoading = null;
+function loadTesseract(){
+  if(window.Tesseract) return Promise.resolve();
+  if(tessLoading) return tessLoading;
+  tessLoading = new Promise((res,rej)=>{
+    const s = document.createElement('script');
+    s.src = TESSERACT_SRC;
+    s.onload = ()=>res();
+    s.onerror = ()=>{ tessLoading=null; rej(new Error('识别引擎加载失败，请检查网络后重试')); };
+    document.head.appendChild(s);
+  });
+  return tessLoading;
+}
+
+/* image preprocessing: upscale + grayscale + Otsu binarization.
+   Colored row backgrounds on these sheets wreck raw recognition;
+   binarizing turns them all into clean black-on-white. */
+function otsuThreshold(hist, total){
+  let sum = 0;
+  for(let i=0;i<256;i++) sum += i*hist[i];
+  let sumB=0, wB=0, best=0, thr=150;
+  for(let i=0;i<256;i++){
+    wB += hist[i];
+    if(!wB) continue;
+    const wF = total - wB;
+    if(!wF) break;
+    sumB += i*hist[i];
+    const mB = sumB/wB, mF = (sum-sumB)/wF;
+    const v = wB*wF*(mB-mF)*(mB-mF);
+    if(v>best){ best=v; thr=i; }
+  }
+  return thr;
+}
+async function preprocessImage(file){
+  const url = URL.createObjectURL(file);
+  try{
+    const img = await new Promise((res,rej)=>{
+      const i = new Image();
+      i.onload = ()=>res(i);
+      i.onerror = ()=>rej(new Error('图片加载失败'));
+      i.src = url;
+    });
+    const w = img.naturalWidth, h = img.naturalHeight;
+    let scale = Math.min(2.5, Math.max(1, 2100 / w));      // ~2100px wide reads best
+    scale = Math.min(scale, Math.sqrt(24e6 / (w*h)) || 1); // cap pixels for phone memory
+    scale = Math.max(scale, 0.5);
+    const c = document.createElement('canvas');
+    c.width = Math.round(w*scale); c.height = Math.round(h*scale);
+    const ctx = c.getContext('2d', { willReadFrequently:true });
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(img, 0, 0, c.width, c.height);
+    const d = ctx.getImageData(0, 0, c.width, c.height);
+    const px = d.data, hist = new Uint32Array(256);
+    for(let i=0;i<px.length;i+=4){
+      const g = (px[i]*77 + px[i+1]*150 + px[i+2]*29) >> 8;
+      px[i] = g; hist[g]++;
+    }
+    const thr = otsuThreshold(hist, px.length/4);
+    for(let i=0;i<px.length;i+=4){
+      const v = px[i] > thr ? 255 : 0;
+      px[i] = px[i+1] = px[i+2] = v; px[i+3] = 255;
+    }
+    ctx.putImageData(d, 0, 0);
+    return c;
+  } finally { URL.revokeObjectURL(url); }
+}
+
+document.getElementById('ocrBtn').addEventListener('click',()=>{
+  document.getElementById('ocrFile').value='';
+  document.getElementById('ocrFile').click();
+});
+document.getElementById('ocrFile').addEventListener('change', async e=>{
+  const files = Array.from(e.target.files||[]);
+  if(!files.length) return;
+  openModal('📷 图片识别中',
+    `<div class="progress-wrap">
+       <div class="progress-txt" id="ocrStatus">正在加载识别引擎…</div>
+       <div class="progress-bar"><i id="ocrProg"></i></div>
+     </div>`, '');
+  const setStatus=(t,p)=>{
+    const st=document.getElementById('ocrStatus'), pr=document.getElementById('ocrProg');
+    if(st) st.textContent=t;
+    if(pr && p!=null) pr.style.width=(p*100).toFixed(0)+'%';
+  };
+  try{
+    await loadTesseract();
+    setStatus('引擎就绪，开始识别…',0.05);
+    const worker = await Tesseract.createWorker(['eng','chi_sim'],1,{
+      logger:m=>{ if(m.status==='recognizing text') setStatus(`识别中 ${(m.progress*100).toFixed(0)}%（共 ${files.length} 张）`, .1+.9*m.progress); }
+    });
+    await worker.setParameters({ tessedit_pageseg_mode:'11' }); // sparse: best for tables
+    let allRows = [];
+    for(let i=0;i<files.length;i++){
+      setStatus(`预处理第 ${i+1}/${files.length} 张图片…`, .08);
+      const canvas = await preprocessImage(files[i]);
+      const { data } = await worker.recognize(canvas, {}, { blocks:true, text:true });
+      const lines = SG_OCR.linesFromBlocks(data);
+      let rows = SG_OCR.parseWords(lines, canvas.width);
+      if(!rows || !rows.length) rows = SG_OCR.parseText(data.text||'');
+      allRows = allRows.concat(rows.map(r=>({
+        cn:r.cn, en:r.en,
+        rates:Object.fromEntries(OPERATORS.map((o,k)=>[o.key, r.rates[k]])),
+      })));
+    }
+    await worker.terminate();
+    if(!allRows.length){
+      openModal('识别完成','<div class="empty" style="padding:24px"><div class="big">😕</div>未能从图片中解析出结构化数据。<br><span style="font-size:12px">请尝试更清晰的截图，或使用"手动添加/导入 JSON"。</span></div>',
+        '<button class="btn" onclick="document.getElementById(\'modalClose\').click()">关闭</button>');
+      return;
+    }
+    showPreview(allRows, `识别到 ${allRows.length} 行数据，请校对后导入`);
+  }catch(err){
+    openModal('识别失败', `<div class="empty" style="padding:24px"><div class="big">⚠️</div>${escapeHtml(err.message||String(err))}</div>`,
+      '<button class="btn" onclick="document.getElementById(\'modalClose\').click()">关闭</button>');
+  }
+});
+
+/* ---------- preview & merge ---------- */
+let previewRows = [];
+function showPreview(rows, note){
+  previewRows = rows;
+  let body = `
+    <div class="field-row">
+      <label>导入到：</label>
+      <select id="importTarget">
+        <option value="fashion" ${activeTab==='fashion'?'selected':''}>${TAB_LABELS.fashion}</option>
+        <option value="beauty" ${activeTab==='beauty'?'selected':''}>${TAB_LABELS.beauty}</option>
+      </select>
+      <span class="hint">${escapeHtml(note||'')}</span>
+    </div>
+    <div class="preview-scroll"><table class="preview"><thead><tr>
+      <th>中文名</th><th>英文名</th>${OPERATORS.map(o=>`<th>${o.cn}</th>`).join('')}<th></th>
+    </tr></thead><tbody id="previewBody"></tbody></table></div>
+    <div class="hint" style="margin-top:8px">留空或"-" = 按基础点；"无" = 无柜台；"询" = 详询特殊团；0 会以红色 0% 警示显示。同名品牌将覆盖原有数据。</div>`;
+  openModal('✅ 校对识别结果', body,
+    `<button class="btn" id="pvCancel">取消</button>
+     <button class="btn primary" id="pvConfirm">合并导入</button>`);
+  renderPreviewBody();
+  document.getElementById('pvCancel').addEventListener('click',closeModal);
+  document.getElementById('pvConfirm').addEventListener('click',confirmImport);
+}
+function renderPreviewBody(){
+  const tb = document.getElementById('previewBody');
+  tb.innerHTML = previewRows.map((r,idx)=>`
+    <tr data-i="${idx}">
+      <td><input data-f="cn" value="${escapeHtml(r.cn)}" placeholder="中文名"></td>
+      <td><input data-f="en" value="${escapeHtml(r.en)}" placeholder="EN"></td>
+      ${OPERATORS.map(o=>{
+        const v = r.rates[o.key];
+        return `<td><input data-f="${o.key}" value="${v==null?'':escapeHtml(String(v))}" placeholder="-"></td>`;
+      }).join('')}
+      <td><button class="del" title="删除此行">🗑</button></td>
+    </tr>`).join('');
+  tb.querySelectorAll('input').forEach(inp=>{
+    inp.addEventListener('input',()=>{
+      const tr = inp.closest('tr'), i = +tr.dataset.i, f = inp.dataset.f;
+      if(f==='cn'||f==='en') previewRows[i][f]=inp.value.trim();
+      else previewRows[i].rates[f] = SG_OCR.normCell(inp.value.trim() || '-');
+    });
+  });
+  tb.querySelectorAll('.del').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const i = +btn.closest('tr').dataset.i;
+      previewRows.splice(i,1);
+      renderPreviewBody();
+    });
+  });
+}
+function confirmImport(){
+  const target = document.getElementById('importTarget').value;
+  const list = DATA.tabs[target].brands;
+  let updated=0, added=0;
+  for(const r of previewRows){
+    if(!r.cn && !r.en) continue;
+    const rEn = norm(r.en), rCn = norm(r.cn);
+    let idx = list.findIndex(b=>
+      (rEn && norm(b.en)===rEn) || (rCn && norm(b.cn)===rCn));
+    if(idx<0 && rEn.length>=4)  // OCR 常在英文名后带上中文列噪声，做前缀匹配兜底
+      idx = list.findIndex(b=>{
+        const bEn = norm(b.en);
+        return bEn.length>=4 && (rEn.startsWith(bEn) || bEn.startsWith(rEn));
+      });
+    if(idx>=0){ list[idx]={...list[idx],...r}; updated++; }
+    else{ list.push({cat:'导入', ...r}); added++; }
+  }
+  DATA.source = (DATA.source||'') + ' +OCR/手动导入';
+  saveData();
+  closeModal();
+  if(target!==activeTab){
+    activeTab = target;
+    document.querySelectorAll('.tab').forEach(t=>{
+      const on = t.dataset.tab===target;
+      t.classList.toggle('active',on); t.setAttribute('aria-selected',on);
+    });
+  }
+  render();
+  toast(`导入完成：更新 ${updated} 条，新增 ${added} 条`);
+}
+
+/* ---------- manual add ---------- */
+document.getElementById('addRowBtn').addEventListener('click',()=>{
+  showPreview([{cn:'',en:'',rates:Object.fromEntries(OPERATORS.map(o=>[o.key,'-']))}], '手动录入一条品牌数据');
+});
+
+/* ---------- export / import / reset ---------- */
+document.getElementById('exportBtn').addEventListener('click',()=>{
+  const blob = new Blob([JSON.stringify(DATA,null,2)],{type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `sg-rebate-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('已导出 JSON');
+});
+document.getElementById('importBtn').addEventListener('click',()=>{
+  document.getElementById('jsonFile').value='';
+  document.getElementById('jsonFile').click();
+});
+document.getElementById('jsonFile').addEventListener('change', async e=>{
+  const f = e.target.files && e.target.files[0];
+  if(!f) return;
+  try{
+    const d = JSON.parse(await f.text());
+    if(!d || !d.tabs || !d.tabs.fashion || !d.tabs.beauty) throw new Error('JSON 结构不符合本工具格式');
+    d.version = SEED.version;
+    DATA = d;
+    saveData(); render();
+    toast('JSON 导入成功');
+  }catch(err){ toast('导入失败：'+err.message); }
+});
+document.getElementById('resetBtn').addEventListener('click',()=>{
+  if(!confirm('确定恢复为内置返点数据（4.18 版）？当前本地修改将被覆盖。')) return;
+  DATA = seedData();
+  saveData(); render();
+  toast('已恢复内置数据');
+});
+
+/* ---------- PWA ---------- */
+const SW_OK = 'serviceWorker' in navigator &&
+  (location.protocol==='https:' || ['localhost','127.0.0.1'].includes(location.hostname));
+if(SW_OK){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('sw.js').then(reg=>{
+      reg.addEventListener('updatefound',()=>{
+        const nw = reg.installing;
+        nw && nw.addEventListener('statechange',()=>{
+          if(nw.state==='installed' && navigator.serviceWorker.controller){
+            toast('应用已更新，下次打开生效');
+          }
+        });
+      });
+    }).catch(()=>{/* offline support unavailable */});
+  });
+}
+
+/* ---------- boot ---------- */
+render();
+</script>
+</body>
+</html>
