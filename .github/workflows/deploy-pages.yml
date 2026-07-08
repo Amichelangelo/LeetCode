@@ -1,0 +1,39 @@
+name: Deploy SG Rebate Tool to GitHub Pages
+
+# Publishes seoul-sg-rebate/ to the gh-pages branch. GitHub auto-enables
+# Pages ("deploy from branch") when gh-pages exists, so no repo-settings
+# access is needed — the official pages actions can't create the site
+# with the workflow token on this repo.
+
+on:
+  push:
+    branches:
+      - master
+      - claude/seoul-sg-rebate-tool-hc77fc
+    paths:
+      - 'seoul-sg-rebate/**'
+      - '.github/workflows/deploy-pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publish seoul-sg-rebate/ to gh-pages
+        run: |
+          TREE=$(git rev-parse "$GITHUB_SHA:seoul-sg-rebate")
+          COMMIT=$(git commit-tree "$TREE" -m "Deploy seoul-sg-rebate @ $GITHUB_SHA")
+          git push --force origin "$COMMIT:refs/heads/gh-pages"
+        env:
+          GIT_AUTHOR_NAME: github-actions[bot]
+          GIT_AUTHOR_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+          GIT_COMMITTER_NAME: github-actions[bot]
+          GIT_COMMITTER_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
