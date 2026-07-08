@@ -296,8 +296,9 @@
           <button class="btn danger" id="resetBtn">↺ 恢复内置数据</button>
         </div>
         <div class="hint">
-          OCR 说明：上传商场发布的返点表截图，系统自动识别品牌名与各店比例，识别结果可在导入前逐格校对修改。
-          识别引擎（Tesseract.js，中英文）首次使用需联网加载。数据保存在本机浏览器中，不会上传服务器。
+          OCR 说明：上传商场发布的返点表截图（建议只截品牌表格区域，清晰原图效果最佳），系统自动定位表格列并识别品牌与比例，
+          结果先进入校对表格，逐格核对后再导入。识别引擎（Tesseract.js，中英文）首次使用需联网加载。
+          数据保存在本机浏览器中，不会上传服务器。
         </div>
         <input type="file" id="ocrFile" accept="image/*" multiple hidden>
         <input type="file" id="jsonFile" accept=".json,application/json" hidden>
@@ -323,6 +324,7 @@
 <div class="toast" id="toast"></div>
 
 <script src="data.js"></script>
+<script src="ocr.js"></script>
 <script>
 'use strict';
 /* =========================================================
@@ -567,41 +569,57 @@ function loadTesseract(){
   return tessLoading;
 }
 
-const RATE_TOKEN = /^(\d{1,2}(?:\.\d+)?(?:-\d{1,2}(?:\.\d+)?)?%?|[-–—~xX×\/]|详询|询|无柜台|无柜|无)$/;
-
-/* Parse OCR plain text into candidate rows.
-   Strategy: walk each line's whitespace tokens from the END, collecting
-   up to 6 rate-like tokens; the remaining head is the brand name.       */
-function parseOcrText(text){
-  const rows = [];
-  for(const raw of text.split(/\r?\n/)){
-    const line = raw.replace(/[|,，、]/g,' ').trim();
-    if(!line) continue;
-    const tokens = line.split(/\s+/);
-    const rates = [];
-    let i = tokens.length - 1;
-    while(i>=0 && rates.length<OPERATORS.length && RATE_TOKEN.test(tokens[i])){
-      rates.unshift(normalizeRateToken(tokens[i]));
-      i--;
-    }
-    if(rates.length < 3) continue;                 // not a data row
-    while(rates.length < OPERATORS.length) rates.push('-');
-    const head = tokens.slice(0,i+1).join(' ').trim();
-    if(!head) continue;
-    const cn = (head.match(/[一-鿿㐀-䶿]+/g)||[]).join('');
-    const en = head.replace(/[一-鿿㐀-䶿]+/g,' ').replace(/\s+/g,' ').trim();
-    if(!cn && !en) continue;
-    rows.push({ cn, en, rates:Object.fromEntries(OPERATORS.map((o,k)=>[o.key,rates[k]])) });
+/* image preprocessing: upscale + grayscale + Otsu binarization.
+   Colored row backgrounds on these sheets wreck raw recognition;
+   binarizing turns them all into clean black-on-white. */
+function otsuThreshold(hist, total){
+  let sum = 0;
+  for(let i=0;i<256;i++) sum += i*hist[i];
+  let sumB=0, wB=0, best=0, thr=150;
+  for(let i=0;i<256;i++){
+    wB += hist[i];
+    if(!wB) continue;
+    const wF = total - wB;
+    if(!wF) break;
+    sumB += i*hist[i];
+    const mB = sumB/wB, mF = (sum-sumB)/wF;
+    const v = wB*wF*(mB-mF)*(mB-mF);
+    if(v>best){ best=v; thr=i; }
   }
-  return rows;
+  return thr;
 }
-function normalizeRateToken(t){
-  if(/^([-–—~\/])$/.test(t)) return '-';            // base rate applies
-  if(/^([xX×]|无柜台|无柜|无)$/.test(t)) return '无'; // no counter
-  if(/^(详询|询)$/.test(t)) return '询';
-  const v = t.replace(/%$/,'');
-  if(/^\d{1,2}(\.\d+)?$/.test(v)) return parseFloat(v);
-  return v; // range like "10-15" kept as string
+async function preprocessImage(file){
+  const url = URL.createObjectURL(file);
+  try{
+    const img = await new Promise((res,rej)=>{
+      const i = new Image();
+      i.onload = ()=>res(i);
+      i.onerror = ()=>rej(new Error('图片加载失败'));
+      i.src = url;
+    });
+    const w = img.naturalWidth, h = img.naturalHeight;
+    let scale = Math.min(2.5, Math.max(1, 2100 / w));      // ~2100px wide reads best
+    scale = Math.min(scale, Math.sqrt(24e6 / (w*h)) || 1); // cap pixels for phone memory
+    scale = Math.max(scale, 0.5);
+    const c = document.createElement('canvas');
+    c.width = Math.round(w*scale); c.height = Math.round(h*scale);
+    const ctx = c.getContext('2d', { willReadFrequently:true });
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(img, 0, 0, c.width, c.height);
+    const d = ctx.getImageData(0, 0, c.width, c.height);
+    const px = d.data, hist = new Uint32Array(256);
+    for(let i=0;i<px.length;i+=4){
+      const g = (px[i]*77 + px[i+1]*150 + px[i+2]*29) >> 8;
+      px[i] = g; hist[g]++;
+    }
+    const thr = otsuThreshold(hist, px.length/4);
+    for(let i=0;i<px.length;i+=4){
+      const v = px[i] > thr ? 255 : 0;
+      px[i] = px[i+1] = px[i+2] = v; px[i+3] = 255;
+    }
+    ctx.putImageData(d, 0, 0);
+    return c;
+  } finally { URL.revokeObjectURL(url); }
 }
 
 document.getElementById('ocrBtn').addEventListener('click',()=>{
@@ -627,11 +645,19 @@ document.getElementById('ocrFile').addEventListener('change', async e=>{
     const worker = await Tesseract.createWorker(['eng','chi_sim'],1,{
       logger:m=>{ if(m.status==='recognizing text') setStatus(`识别中 ${(m.progress*100).toFixed(0)}%（共 ${files.length} 张）`, .1+.9*m.progress); }
     });
+    await worker.setParameters({ tessedit_pageseg_mode:'11' }); // sparse: best for tables
     let allRows = [];
     for(let i=0;i<files.length;i++){
-      setStatus(`识别第 ${i+1}/${files.length} 张图片…`, .1);
-      const { data } = await worker.recognize(files[i]);
-      allRows = allRows.concat(parseOcrText(data.text||''));
+      setStatus(`预处理第 ${i+1}/${files.length} 张图片…`, .08);
+      const canvas = await preprocessImage(files[i]);
+      const { data } = await worker.recognize(canvas, {}, { blocks:true, text:true });
+      const lines = SG_OCR.linesFromBlocks(data);
+      let rows = SG_OCR.parseWords(lines, canvas.width);
+      if(!rows || !rows.length) rows = SG_OCR.parseText(data.text||'');
+      allRows = allRows.concat(rows.map(r=>({
+        cn:r.cn, en:r.en,
+        rates:Object.fromEntries(OPERATORS.map((o,k)=>[o.key, r.rates[k]])),
+      })));
     }
     await worker.terminate();
     if(!allRows.length){
@@ -686,7 +712,7 @@ function renderPreviewBody(){
     inp.addEventListener('input',()=>{
       const tr = inp.closest('tr'), i = +tr.dataset.i, f = inp.dataset.f;
       if(f==='cn'||f==='en') previewRows[i][f]=inp.value.trim();
-      else previewRows[i].rates[f] = normalizeRateToken(inp.value.trim() || '-');
+      else previewRows[i].rates[f] = SG_OCR.normCell(inp.value.trim() || '-');
     });
   });
   tb.querySelectorAll('.del').forEach(btn=>{
@@ -703,8 +729,14 @@ function confirmImport(){
   let updated=0, added=0;
   for(const r of previewRows){
     if(!r.cn && !r.en) continue;
-    const idx = list.findIndex(b=>
-      (r.en && norm(b.en)===norm(r.en)) || (r.cn && norm(b.cn)===norm(r.cn)));
+    const rEn = norm(r.en), rCn = norm(r.cn);
+    let idx = list.findIndex(b=>
+      (rEn && norm(b.en)===rEn) || (rCn && norm(b.cn)===rCn));
+    if(idx<0 && rEn.length>=4)  // OCR 常在英文名后带上中文列噪声，做前缀匹配兜底
+      idx = list.findIndex(b=>{
+        const bEn = norm(b.en);
+        return bEn.length>=4 && (rEn.startsWith(bEn) || bEn.startsWith(rEn));
+      });
     if(idx>=0){ list[idx]={...list[idx],...r}; updated++; }
     else{ list.push({cat:'导入', ...r}); added++; }
   }

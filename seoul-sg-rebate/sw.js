@@ -1,11 +1,12 @@
 /* Seoul SG Rebate Tool — service worker
    core assets pre-cached for offline use; data/index fetched
    network-first so updates land as soon as they're deployed. */
-const CACHE = 'sg-rebate-v3';
+const CACHE = 'sg-rebate-v4';
 const CORE = [
   './',
   './index.html',
   './data.js',
+  './ocr.js',
   './manifest.webmanifest',
   './icon-192.png',
   './icon-512.png',
@@ -30,7 +31,7 @@ self.addEventListener('fetch', e => {
   const url = new URL(req.url);
   if (url.origin !== location.origin) return; // let CDN (tesseract) requests pass through
 
-  const isFresh = req.mode === 'navigate' || url.pathname.endsWith('/data.js') || url.pathname.endsWith('/index.html');
+  const isFresh = req.mode === 'navigate' || /\/(data|ocr)\.js$|\/index\.html$/.test(url.pathname);
   if (isFresh) {
     // network-first: always try to pick up newly deployed data
     e.respondWith(
